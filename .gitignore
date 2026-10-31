@@ -1,0 +1,14 @@
+# Local settings (contains your Wi-Fi password)
+usb/refurb/config.ps1
+
+# Per-unit reports (service tags, drive serials)
+usb/refurb/reports/
+
+# Vendor installers (not redistributable)
+usb/refurb/installers/*
+!usb/refurb/installers/README.md
+
+# OS clutter
+Thumbs.db
+.DS_Store
+desktop.ini

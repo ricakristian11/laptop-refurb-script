@@ -1,0 +1,1 @@
+Put the **Dell Command | Update** (Windows Universal application) installer `.exe` from Dell's support site in this folder. `audit.ps1` finds any file matching `*Command*Update*.exe` and installs it silently with `/s`.
