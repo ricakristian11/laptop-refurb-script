@@ -76,7 +76,7 @@
         <RunSynchronousCommand wcm:action="add">
           <Order>1</Order>
           <Description>Start refurb audit script from the USB</Description>
-          <Path>cmd.exe /c for %i in (D E F G H I J K L M N O P) do @if exist %i:\refurb\audit.ps1 start "Refurb" powershell.exe -NoProfile -ExecutionPolicy Bypass -NoExit -File %i:\refurb\audit.ps1</Path>
+          <Path>cmd.exe /c (for %i in (D E F G H I J K L M N O P) do @if exist %i:\refurb\audit.ps1 start "Refurb" powershell.exe -NoProfile -ExecutionPolicy Bypass -NoExit -File %i:\refurb\audit.ps1) &amp; exit 0</Path>
         </RunSynchronousCommand>
       </RunSynchronous>
     </component>
