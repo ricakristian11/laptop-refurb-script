@@ -157,7 +157,12 @@ function Install-Dcu {
     Say "Installing $($installer.Name) silently..."
     Start-Process -FilePath $installer.FullName -ArgumentList '/s' -Wait
     Start-Sleep -Seconds 5
-    return (Get-DcuCli)
+    $cli = Get-DcuCli
+    if (-not $cli) {
+        Say 'Dell Command | Update did not install (usually the .NET Desktop Runtime is missing). Drivers were NOT updated.' 'Red'
+        Add-Content -Path (Join-Path $StateDir 'dcu-codes.txt') -Value 'DCU install failed'
+    }
+    return $cli
 }
 
 function Invoke-DcuRound($Cli, [int]$Round) {
@@ -182,7 +187,7 @@ function Get-BatteryInfo([string]$HtmlOut) {
     $full   = [double]$b.FullChargeCapacity
     $pct = $null
     if ($design -gt 0) { $pct = [math]::Round($full / $design * 100) }
-    return [ordered]@{ DesignmWh = $design; FullChargemWh = $full; HealthPct = $pct; Cycles = "$($b.CycleCount)" }
+    return [ordered]@{ DesignmWh = $design; FullChargemWh = $full; HealthPct = $pct; Cycles = $(if ("$($b.CycleCount)" -in '', '0') { 'not reported' } else { "$($b.CycleCount)" }) }
 }
 
 function Get-SystemInfo {
@@ -234,7 +239,8 @@ function Get-SystemInfo {
         WiFiAdapter     = $wifiText
         Bluetooth       = $(if ($bt.Count -gt 0) { 'Yes' } else { 'NOT FOUND' })
         Camera          = $(if ($cam.Count -gt 0) { 'Yes' } else { 'NOT FOUND' })
-        ProblemDevices  = (($bad | ForEach-Object { $_.FriendlyName }) -join '; ')
+        ProblemDevices  = (($bad | ForEach-Object { $_.FriendlyName } | Where-Object { $_ }) -join '; ')
+        ProblemCount    = $bad.Count
     }
 }
 
@@ -397,6 +403,11 @@ Write-Host "Unit: $UnitId"
 Set-AuditGuards
 
 $stage  = Get-Stage
+if ($stage -eq 'report' -and -not (Get-DcuCli)) {
+    # Drivers never got installed on an earlier run (e.g. missing installer) - try again.
+    Remove-Item (Join-Path $StateDir 'dcu-codes.txt') -ErrorAction SilentlyContinue
+    $stage = 'start'
+}
 $online = Connect-Network
 
 # ---- stage 1: drivers + BIOS via Dell Command | Update ----
@@ -448,7 +459,9 @@ if ($info.Activated -ne 'Yes')               { $flags.Add('Windows NOT activated
 if ($info.BIOSKeyEdition -and $info.BIOSKeyEdition -notmatch 'Professional') {
     $flags.Add("BIOS license is '$($info.BIOSKeyEdition)', not Pro - reinstall the matching edition")
 }
-if ($info.ProblemDevices)                    { $flags.Add("Problem devices: $($info.ProblemDevices)") }
+if ($info.ProblemCount -gt 0) {
+    $flags.Add("$($info.ProblemCount) devices without working drivers (run Dell Command | Update before judging audio, Bluetooth or ports): $($info.ProblemDevices)")
+}
 if ($info.WiFiAdapter -eq 'NOT FOUND')       { $flags.Add('Wi-Fi adapter missing') }
 if ($info.Bluetooth -ne 'Yes')               { $flags.Add('Bluetooth not found') }
 if ($info.Camera -ne 'Yes')                  { $flags.Add('Webcam not found') }
@@ -486,7 +499,7 @@ $grade = Ask 'Cosmetic grade' @('a', 'b', 'c', 'parts')
 $notes = Read-Host 'Notes for the listing (optional)'
 
 $failed = @($qa.GetEnumerator() | Where-Object { $_.Value -eq 'n' } | ForEach-Object { $_.Key })
-$hard   = @($flags | Where-Object { $_ -match 'NOT activated|Problem devices|Wi-Fi adapter missing|Drive health|not Pro' })
+$hard   = @($flags | Where-Object { $_ -match 'NOT activated|without working drivers|Wi-Fi adapter missing|Drive health|not Pro' })
 $result = 'PASS'
 if ($failed.Count -gt 0 -or $hard.Count -gt 0) { $result = 'CHECK' }
 
