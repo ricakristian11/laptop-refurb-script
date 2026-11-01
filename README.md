@@ -40,7 +40,7 @@ flowchart LR
 
 1. Make a Windows 11 USB (16 GB+) with Microsoft's [Media Creation Tool](https://www.microsoft.com/software-download/windows11). If you use Rufus instead, untick all of its Windows customization options.
 2. Copy `usb/autounattend.xml` and the `usb/refurb` folder to the root of the stick.
-3. Download **Dell Command | Update** (Windows Universal application) from Dell's support site and put the `.exe` in `refurb/installers/`. It isn't included here because it isn't ours to redistribute.
+3. Download **Dell Command | Update Windows Universal Application** from Dell's support site and the **.NET Desktop Runtime** x64 installer it requires from Microsoft, and put both `.exe` files in `refurb/installers/`. Neither is included here because they aren't ours to redistribute.
 4. Copy `refurb/config.example.ps1` to `refurb/config.ps1` and fill in your Wi-Fi name and password (WPA2), or leave them blank and use a USB Ethernet adapter. Edit the app removal list if you like.
 5. Test on one laptop before using it on a batch.
 

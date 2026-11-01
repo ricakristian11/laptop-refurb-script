@@ -145,6 +145,15 @@ function Install-Dcu {
         Say 'Dell Command | Update installer not found in refurb\installers - skipping driver/BIOS updates.' 'Yellow'
         return $null
     }
+    # Current Dell Command | Update versions need the .NET Desktop Runtime, which a fresh Windows install lacks.
+    $dotnet = Get-ChildItem -Path (Join-Path $RefurbDir 'installers') -Filter 'windowsdesktop-runtime*x64*.exe' -ErrorAction SilentlyContinue |
+              Sort-Object Name -Descending | Select-Object -First 1
+    if ($dotnet) {
+        Say "Installing $($dotnet.Name) (needed by Dell Command | Update)..."
+        Start-Process -FilePath $dotnet.FullName -ArgumentList '/install', '/quiet', '/norestart' -Wait
+    } else {
+        Say 'No .NET Desktop Runtime installer in refurb\installers - Dell Command | Update may fail to install.' 'Yellow'
+    }
     Say "Installing $($installer.Name) silently..."
     Start-Process -FilePath $installer.FullName -ArgumentList '/s' -Wait
     Start-Sleep -Seconds 5
