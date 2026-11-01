@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   Refurb USB answer file - Windows 11 Pro, unattended install into AUDIT MODE.
-  WARNING: this WIPES DISK 0 (unless disk 0 is a USB drive, then it shuts down) of whatever computer boots from this USB. Label the stick.
+  WARNING: this WIPES DISK 0 (the internal SSD on Latitude 3420s; check with diskpart "list disk" on new models) of whatever computer boots from this USB. Label the stick.
   Flow: Windows Setup (no prompts) -> boots to Audit Mode as built-in Administrator
         -> auditUser pass starts D:\refurb\audit.ps1 (or whichever letter the USB gets).
 -->
@@ -19,34 +19,59 @@
     </component>
 
     <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-      <RunSynchronous>
-        <!-- Safety: if disk 0 is a USB drive (e.g. this stick), shut down instead of wiping it.
-             Every command here must exit 0 on success: Setup treats any other exit code as fatal. -->
-        <RunSynchronousCommand wcm:action="add">
-          <Order>1</Order>
-          <Description>Stop if disk 0 is a USB drive</Description>
-          <Path>cmd.exe /c (echo select disk 0&amp;echo detail disk)&gt;X:\diskcheck.txt &amp; diskpart /s X:\diskcheck.txt | findstr /r /c:"Type *: USB" &gt;nul &amp;&amp; wpeutil shutdown &amp; exit 0</Path>
-        </RunSynchronousCommand>
-        <!-- Partition disk 0 with a diskpart script (more reliable with the 24H2+ setup than DiskConfiguration). -->
-        <RunSynchronousCommand wcm:action="add">
-          <Order>2</Order>
-          <Description>Write diskpart script, part 1</Description>
-          <Path>cmd.exe /c &gt;X:\dp.txt (echo select disk 0&amp;echo clean&amp;echo convert gpt&amp;echo create partition efi size=300&amp;echo format quick fs=fat32 label=System)</Path>
-        </RunSynchronousCommand>
-        <RunSynchronousCommand wcm:action="add">
-          <Order>3</Order>
-          <Description>Write diskpart script, part 2</Description>
-          <Path>cmd.exe /c &gt;&gt;X:\dp.txt (echo create partition msr size=16&amp;echo create partition primary&amp;echo format quick fs=ntfs label=Windows&amp;echo exit)</Path>
-        </RunSynchronousCommand>
-        <RunSynchronousCommand wcm:action="add">
-          <Order>4</Order>
-          <Description>Run diskpart; pause and show the log if it fails</Description>
-          <Path>cmd.exe /c diskpart /s X:\dp.txt &gt;X:\dp.log || (type X:\dp.log &amp; echo DISKPART FAILED - take a photo of this screen &amp; pause &amp; exit 1)</Path>
-        </RunSynchronousCommand>
-      </RunSynchronous>
+      <DiskConfiguration>
+        <Disk wcm:action="add">
+          <DiskID>0</DiskID>
+          <WillWipeDisk>true</WillWipeDisk>
+          <CreatePartitions>
+            <CreatePartition wcm:action="add">
+              <Order>1</Order>
+              <Type>EFI</Type>
+              <Size>300</Size>
+            </CreatePartition>
+            <CreatePartition wcm:action="add">
+              <Order>2</Order>
+              <Type>MSR</Type>
+              <Size>16</Size>
+            </CreatePartition>
+            <CreatePartition wcm:action="add">
+              <Order>3</Order>
+              <Type>Primary</Type>
+              <Extend>true</Extend>
+            </CreatePartition>
+          </CreatePartitions>
+          <ModifyPartitions>
+            <ModifyPartition wcm:action="add">
+              <Order>1</Order>
+              <PartitionID>1</PartitionID>
+              <Format>FAT32</Format>
+              <Label>System</Label>
+            </ModifyPartition>
+            <ModifyPartition wcm:action="add">
+              <Order>2</Order>
+              <PartitionID>2</PartitionID>
+            </ModifyPartition>
+            <ModifyPartition wcm:action="add">
+              <Order>3</Order>
+              <PartitionID>3</PartitionID>
+              <Format>NTFS</Format>
+              <Label>Windows</Label>
+              <Letter>C</Letter>
+            </ModifyPartition>
+          </ModifyPartitions>
+        </Disk>
+      </DiskConfiguration>
 
       <ImageInstall>
         <OSImage>
+          <InstallFrom>
+            <!-- Business Latitudes ship with a Pro license stored in the BIOS, so install Pro.
+                 The audit script flags any laptop whose BIOS key is a different edition. -->
+            <MetaData wcm:action="add">
+              <Key>/IMAGE/NAME</Key>
+              <Value>Windows 11 Pro</Value>
+            </MetaData>
+          </InstallFrom>
           <InstallTo>
             <DiskID>0</DiskID>
             <PartitionID>3</PartitionID>

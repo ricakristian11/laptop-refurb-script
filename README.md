@@ -6,6 +6,8 @@ Built for a small electronics refurbishing business processing batches of used D
 
 > [!WARNING]
 > **This USB erases the internal drive of any computer that boots from it.** The answer file wipes disk 0 with no prompt. Label the stick and never leave it plugged into a computer you care about when it restarts.
+>
+> On the Latitude 3420 the internal SSD is disk 0 and the USB stick is disk 1. Before using the kit on a different model, check once with Shift+F10 → `diskpart` → `list disk` in Windows Setup.
 
 ## What it does
 
@@ -83,12 +85,12 @@ It doesn't disable Windows Update, Defender, telemetry or services. Those "deblo
 | Symptom | Likely cause |
 | --- | --- |
 | "Windows cannot locate disk 0" | BIOS storage mode is *RAID On*, or the drive has failed |
-| Laptop shuts down right after booting the USB | Safety stop: Windows Setup saw the USB stick as disk 0. Move the stick to another port and boot again |
 | Unit ID has odd characters | Only letters, digits, `-` and `_` are kept for folder names |
 | Script window didn't open | Open the USB in File Explorer, right-click `refurb\audit.ps1` → *Run with PowerShell* |
 | "Not activated" | No internet yet; re-run the script once online |
 | "BIOS license is … not Pro" | The unit shipped with a different edition; reinstall that edition |
 | Sysprep failed | See `C:\Windows\System32\Sysprep\Panther\setuperr.log` |
+| Setup error 0x800700FF - 0x40030 | A `RunSynchronous` command in the windowsPE pass returned a non-zero exit code; the 24H2+ Setup treats that as fatal. This kit uses none there. Logs: `X:\$WINDOWS.~BT\Sources\Panther\setupact.log` |
 
 ## Results
 
