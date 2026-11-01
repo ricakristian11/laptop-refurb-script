@@ -83,6 +83,8 @@ It doesn't disable Windows Update, Defender, telemetry or services. Those "deblo
 | Symptom | Likely cause |
 | --- | --- |
 | "Windows cannot locate disk 0" | BIOS storage mode is *RAID On*, or the drive has failed |
+| Laptop shuts down right after booting the USB | Safety stop: Windows Setup saw the USB stick as disk 0. Move the stick to another port and boot again |
+| Unit ID has odd characters | Only letters, digits, `-` and `_` are kept for folder names |
 | Script window didn't open | Open the USB in File Explorer, right-click `refurb\audit.ps1` → *Run with PowerShell* |
 | "Not activated" | No internet yet; re-run the script once online |
 | "BIOS license is … not Pro" | The unit shipped with a different edition; reinstall that edition |
